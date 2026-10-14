@@ -316,7 +316,7 @@
 
   // ─── Shared markup ─────────────────────────────────────────
   const thumbHtml = (v) => (v.thumbnailUrl
-    ? `<img crossorigin="anonymous" src="${esc(v.thumbnailUrl)}" alt="" loading="lazy" />`
+    ? `<img src="${esc(v.thumbnailUrl)}" alt="" loading="lazy" />`
     : `<span class="thumb-empty">${svg('film', 28)}</span>`);
 
   const metaLine = (v) => [height(v) >= 720 ? '<span class="hdtag">HD</span>' : '', seconds(v) ? esc(formatDuration(seconds(v))) : '', esc(timeAgo(v.publishedAt))]
@@ -477,7 +477,7 @@
       title: titleOf(v),
       wide: true,
       html: `
-        <div class="info-hero">${v.thumbnailUrl ? `<img crossorigin="anonymous" src="${esc(v.thumbnailUrl)}" alt="" />` : ''}<div class="info-shade"></div>
+        <div class="info-hero">${v.thumbnailUrl ? `<img src="${esc(v.thumbnailUrl)}" alt="" />` : ''}<div class="info-shade"></div>
           <div class="info-hero-body"><h2>${esc(titleOf(v))}</h2>
             <div class="info-actions"><a class="btn btn-light" href="${watchHref(v)}" data-close>${svg('play', 16)} Play</a>
               <button class="round" data-act="list" data-id="${esc(v.id)}" aria-pressed="${inList(v.id)}" aria-label="Toggle My List">${svg(inList(v.id) ? 'check' : 'plus', 16)}</button></div></div></div>
@@ -575,7 +575,7 @@
         const t = playTarget(item);
         return `
         <section class="billboard slide${i === 0 ? ' on' : ''}" aria-label="Featured series">
-          ${item.posterUrl ? `<img class="bb-img" crossorigin="anonymous" src="${esc(item.posterUrl)}" alt="" />` : ''}
+          ${item.posterUrl ? `<img class="bb-img" src="${esc(item.posterUrl)}" alt="" />` : ''}
           <div class="bb-shade"></div>
           <div class="bb-body">
             <p class="bb-info"><span class="chip">Series</span><span>${esc(seriesLine(item))}</span></p>
@@ -590,7 +590,7 @@
       }
       return `
         <section class="billboard slide${i === 0 ? ' on' : ''}" aria-label="Featured video">
-          ${item.thumbnailUrl ? `<img class="bb-img" crossorigin="anonymous" src="${esc(item.thumbnailUrl)}" alt="" />` : ''}
+          ${item.thumbnailUrl ? `<img class="bb-img" src="${esc(item.thumbnailUrl)}" alt="" />` : ''}
           <div class="bb-shade"></div>
           <div class="bb-body">
             <p class="bb-info"><span class="chip">${ageMs(item) < 864e5 ? 'New' : 'Movie'}</span><span>${metaLine(item)}</span></p>
@@ -700,7 +700,7 @@
 
     app.innerHTML = `
       <section class="billboard series-hero" aria-label="${esc(series.title)}">
-        ${series.posterUrl ? `<img class="bb-img" crossorigin="anonymous" src="${esc(series.posterUrl)}" alt="" />` : ''}
+        ${series.posterUrl ? `<img class="bb-img" src="${esc(series.posterUrl)}" alt="" />` : ''}
         <div class="bb-shade"></div>
         <div class="bb-body">
           <span class="bb-tag">Series</span>
@@ -788,6 +788,14 @@
 
     const subTracks = () => video.textTracks && video.textTracks.length ? video.textTracks : (video.subtitleUrl ? [{ id: 'legacy', language: 'en', label: 'English', url: video.subtitleUrl }] : []);
 
+    // With subtitles the video element loads in CORS mode, and so would a `poster`, which then clashes with the
+    // normal-mode copy of the same picture the browser cached from the rows. Show it as a background instead.
+    const posterAttr = () => {
+      if (!video.thumbnailUrl) return '';
+      if (!subTracks().length) return `poster="${esc(video.thumbnailUrl)}"`;
+      return `style="background: #000 url('${esc(video.thumbnailUrl)}') center / contain no-repeat"`;
+    };
+
     function mount() {
       document.title = `${titleOf(video)} — VideoStream`;
       app.innerHTML = `
@@ -795,7 +803,7 @@
           <div class="player" id="player">
             <video id="video" controls playsinline preload="metadata" autoplay
                    ${subTracks().length ? 'crossorigin="anonymous"' : ''}
-                   ${video.thumbnailUrl ? `poster="${esc(video.thumbnailUrl)}"` : ''}>
+                   ${posterAttr()}>
               ${subTracks().map((t) => `<track kind="subtitles" label="${esc(t.label)}" ${/^[a-z]{2,3}$/.test(t.language) ? `srclang="${t.language}"` : ''} src="${esc(t.url)}">`).join('')}
             </video>
             <div class="overlay" id="buffering" aria-hidden="true"><div class="spinner small"></div></div>
