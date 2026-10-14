@@ -940,7 +940,7 @@
         const lang = storage.get('vs-audio');
         const wanted = lang ? found.findIndex((t, i) => ((video.audioTracks && video.audioTracks[i] && video.audioTracks[i].language) || t.lang) === lang) : -1;
         if (wanted >= 0 && wanted !== hls.audioTrack) hls.audioTrack = wanted;
-        audioSel.value = String(hls.audioTrack);
+        audioSel.value = String(Math.max(0, hls.audioTrack));
       }
       if (audioSel) audioSel.addEventListener('change', () => {
         if (!hls) return;
@@ -969,7 +969,7 @@
             if (resumeAt) videoEl.currentTime = resumeAt;
             videoEl.play().catch(() => { /* autoplay blocked: the viewer presses play */ });
           });
-          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, setupAudio);
+          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, setupAudio); hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_e, d) => { if (audioSel) audioSel.value = String(d.id); });
           hls.on(Hls.Events.LEVEL_SWITCHED, (_e, data) => {
             const level = hls.levels[data.level];
             if (level && qualitySel.value === '-1') qualitySel.options[0].textContent = `Auto (${level.height}p)`;
