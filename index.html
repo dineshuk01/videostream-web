@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#141414" />
+  <title>VideoStream — Watch</title>
+  <meta name="description" content="Watch the latest videos on VideoStream." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" />
+  <link rel="stylesheet" href="home.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='%23e50914'/><path d='M9 7l8 5-8 5z' fill='white'/></svg>" />
+  <!-- Hls.js (pinned version) -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <header class="hdr" id="hdr">
+    <a class="logo" href="#/" aria-label="VideoStream home">VIDEO<b>STREAM</b></a>
+
+    <nav class="nav" id="nav" aria-label="Browse">
+      <a href="#/" data-nav="home">Home</a>
+      <a href="#/movies" data-nav="movies">Movies</a>
+      <a href="#/series" data-nav="series">Series</a>
+      <a href="#/anime" data-nav="anime">Anime</a>
+    </nav>
+
+    <div class="hdr-right">
+      <form class="search" id="search-form" role="search">
+        <button type="button" class="search-btn" id="search-toggle" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </button>
+        <label class="sr-only" for="q">Search videos</label>
+        <input id="q" type="search" placeholder="Titles" autocomplete="off" />
+      </form>
+      <div id="auth-slot"></div>
+    </div>
+  </header>
+
+  <main id="app" tabindex="-1"></main>
+
+  <footer class="ftr">VideoStream · adaptive HLS streaming</footer>
+
+  <script src="/shared/common.js"></script>
+  <script src="home.js"></script>
+</body>
+</html>
