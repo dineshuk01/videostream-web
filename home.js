@@ -1073,29 +1073,80 @@
     if (currentView && currentView.teardown) currentView.teardown();
     currentView = null;
     document.body.classList.add('signed-out');
-    renderAuth(location.hash === '#/signup' ? 'signup' : 'login');
+    const mode = location.hash === '#/signup' ? 'signup' : 'login';
+    fetch('/api/auth/config', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => (json && json.success ? json.data : { passwordLogin: true }))
+      .catch(() => ({ passwordLogin: true }))
+      .then((config) => { authConfig = config; renderAuth(mode); });
+  }
+
+  // ─── Sign in with Google ──────────────────────────────────
+  let authConfig = { passwordLogin: true, googleClientId: null };
+  let googleScript = null;
+  function loadGoogle() {
+    googleScript = googleScript || new Promise((resolve, reject) => {
+      const tag = document.createElement('script');
+      tag.src = 'https://accounts.google.com/gsi/client';
+      tag.async = true;
+      tag.onload = resolve;
+      tag.onerror = () => reject(new Error('Could not reach Google. Check your connection and try again.'));
+      document.head.appendChild(tag);
+    });
+    return googleScript;
+  }
+  async function signInWithGoogle(response) {
+    const errBox = app.querySelector('#auth-error');
+    try {
+      const res = await fetch('/api/auth/google', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: response.credential }) });
+      const json = await res.json().catch(() => null);
+      if (!json || !json.success) throw new Error((json && json.error && json.error.message) || 'Google sign-in failed. Try again.');
+      location.hash = '#/';
+      location.reload(); // start the app fresh as the signed-in viewer
+    } catch (err) {
+      if (errBox) { errBox.textContent = err.message; errBox.hidden = false; }
+    }
+  }
+  function showGoogleButton() {
+    const slot = app.querySelector('#google-btn');
+    if (!slot || !authConfig.googleClientId) return;
+    loadGoogle().then(() => {
+      window.google.accounts.id.initialize({ client_id: authConfig.googleClientId, callback: signInWithGoogle, ux_mode: 'popup' });
+      window.google.accounts.id.renderButton(slot, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'continue_with', width: Math.min(356, slot.clientWidth || 356) });
+    }).catch((err) => {
+      const errBox = app.querySelector('#auth-error');
+      if (errBox) { errBox.textContent = err.message; errBox.hidden = false; }
+    });
   }
 
   function renderAuth(mode) {
-    const signup = mode === 'signup';
+    const google = !!authConfig.googleClientId;
+    const passwords = authConfig.passwordLogin !== false;
+    const signup = mode === 'signup' && passwords;
     document.title = `${signup ? 'Create your account' : 'Sign in'} — VideoStream`;
-    app.innerHTML = `
-      <div class="auth-page">
-        <form class="auth-card" id="auth-form" novalidate>
-          <h1>${signup ? 'Create your account' : 'Sign in'}</h1>
-          <p class="auth-sub">${signup ? 'Watch everything on VideoStream. Your list and progress follow you to any device.' : 'Welcome back. Sign in to keep watching.'}</p>
+    const passwordForm = !passwords ? '' : `
           ${signup ? '<label class="auth-field"><span>Name</span><input class="auth-input" name="name" autocomplete="name" maxlength="60" required /></label>' : ''}
           <label class="auth-field"><span>Email</span><input class="auth-input" name="email" type="email" autocomplete="email" required /></label>
           <label class="auth-field"><span>Password</span><input class="auth-input" name="password" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}" minlength="8" required />
             ${signup ? '<small>At least 8 characters.</small>' : ''}</label>
-          <p class="auth-error" id="auth-error" role="alert" hidden></p>
           <button class="btn btn-red btn-lg auth-submit" type="submit">${signup ? 'Create account' : 'Sign in'}</button>
-          <p class="auth-switch">${signup ? 'Already have an account? <a href="#/login" data-auth="login">Sign in</a>' : 'New to VideoStream? <a href="#/signup" data-auth="signup">Create an account</a>'}</p>
+          <p class="auth-switch">${signup ? 'Already have an account? <a href="#/login" data-auth="login">Sign in</a>' : 'New to VideoStream? <a href="#/signup" data-auth="signup">Create an account</a>'}</p>`;
+    app.innerHTML = `
+      <div class="auth-page">
+        <form class="auth-card" id="auth-form" novalidate>
+          <h1>${signup ? 'Create your account' : 'Sign in'}</h1>
+          <p class="auth-sub">${google && !passwords ? 'Use your Google account to sign in, or to create your account the first time. Your list and progress follow you to any device.' : signup ? 'Watch everything on VideoStream. Your list and progress follow you to any device.' : 'Welcome back. Sign in to keep watching.'}</p>
+          ${google ? '<div class="google-btn" id="google-btn"></div>' : ''}
+          ${google && passwords ? '<p class="auth-or"><span>or</span></p>' : ''}
+          <p class="auth-error" id="auth-error" role="alert" hidden></p>
+          ${passwordForm}
         </form>
       </div>`;
+    showGoogleButton();
+    if (!passwords) return; // Google only: no email form
     const form = app.querySelector('#auth-form');
     const errBox = app.querySelector('#auth-error');
-    (form.name || form.email).focus();
+    if (!google) (form.name || form.email).focus();
     app.querySelector('[data-auth]').addEventListener('click', (e) => { e.preventDefault(); renderAuth(signup ? 'login' : 'signup'); });
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

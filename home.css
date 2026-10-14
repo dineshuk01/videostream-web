@@ -361,3 +361,6 @@ body.signed-out .nav, body.signed-out .search, body.signed-out .ftr { display: n
 .acct-menu a, .acct-menu button { padding: 0.5rem 0.6rem; border-radius: 6px; border: none; background: none; text-align: left; font-size: 0.86rem; color: #e5e5e5; }
 .acct-menu a:hover, .acct-menu button:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 
+.google-btn { min-height: 44px; display: flex; justify-content: center; }
+.auth-or { display: flex; align-items: center; gap: 0.8rem; color: var(--text-3); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.auth-or::before, .auth-or::after { content: ''; flex: 1; height: 1px; background: rgba(255, 255, 255, 0.12); }
